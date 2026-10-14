@@ -27,7 +27,10 @@ class Writer:
         branches = {k: np.asarray(v, dtype=FRAME_DTYPES.get(k)) for k, v in frames.items()}
 
         with uproot.recreate(self._path) as f:
-            f["frames"] = branches
+            # mktree + extend writes a TTree. Assigning a dict (f["frames"] = ...) writes an RNTuple
+            # in recent uproot, which older ROOT versions cannot read.
+            tree = f.mktree("frames", {k: v.dtype for k, v in branches.items()})
+            tree.extend(branches)
             if regs is not None:
                 f["bor_registers"] = json.dumps(regs, default=str)
             if meta is not None:

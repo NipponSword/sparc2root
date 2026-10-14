@@ -22,6 +22,7 @@ def test_write_frames(tmp_path):
     Writer(out).write(make_frames(), regs={"conf_tot_disable": 1}, meta={"condition": "test"})
 
     with uproot.open(out) as f:
+        assert f.classname_of("frames") == "TTree"
         t = f["frames"]
         assert t.num_entries == 3
         a = t.arrays(library="np")
