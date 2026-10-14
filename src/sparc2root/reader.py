@@ -7,6 +7,7 @@ from razorbill.devices.sparc import SPARCHitFrame, SPARCBusyFrame
 class Reader:
     def __init__(self, path):
         self.meta = None
+        self.regs = None
         self.frames = {
             "column": [],
             "row": [],
@@ -16,13 +17,14 @@ class Reader:
             }
         self._path = path
         self._unpacker = FileUnpacker(
-            path,
+            str(path),
             self._on_data,
             self._on_bor,
             self._on_eor)
         
     def _on_bor(self, sender, bor, device_map):
         regs = bor.userTags["sparc"]["registers"]
+        self.regs = regs
         decoder, config = device_map["sparc"]
 
         config.set("tot_mode", regs["conf_tot_disable"] == 0)
@@ -49,15 +51,16 @@ class Reader:
         if r == UnpackResult.WAITING_FOR_DATA:
             warnings.warn(f"{self._path}: unpack ended with {r.name}")
         if r == UnpackResult.FAILED:
-            raise RuntimeError("f{self._path}: unpack failed")
+            raise RuntimeError(f"{self._path}: unpack failed")
 
         return r
 
     def show(self):
-        print(f"The number of hits : {len(self.frames)}")
-        print(f"Initial 5 hits as reference")
+        n = len(self.frames["fastor"])
+        print(f"The number of frames : {n}")
+        print(f"Initial 5 frames as reference")
 
-        for i in range(min(5, len(self.frames))):
+        for i in range(min(5, n)):
             print(
                 self.frames["column"][i],
                 self.frames["row"][i],
